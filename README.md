@@ -5,6 +5,7 @@
 - Updated on 12 May 2024.
 
 Model API
+
 - 백만(1,000,000) Token 기준
 
 |Model|Input|Output|
