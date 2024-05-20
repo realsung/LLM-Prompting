@@ -1,50 +1,20 @@
 # LLM-Prompting
 
-## OpenAI API 가격
+- Code Based Few-shot Prompting for Large Language Models
 
-- Updated on 12 May 2024.
+## Setup
 
-Model API
+- `git clone https://github.com/realsung/LLM-Prompting.git`
 
-- 백만(1,000,000) Token 기준
+- `cd LLM-Prompting & pip install -r requirements.txt`
 
-|Model|Input|Output|
-|:---|:---|:---|
-|gpt-4-turbo-2024-04-09|$10.00|$30.00|
-|gpt-4|$30.00|$60.00|
-|gpt-4-32k|$60.00|$120.00|
-|gpt-3.5-turbo-0125|$0.50|$1.50|
-|gpt-3.5-turbo-instruct|$1.50|$2.00|
+- `echo "export OPENAI_API_KEY='sk-xxxxxxxxxx'" >> ~/.zshrc`
 
-Assist API
+- `source ~/.zshrc`
 
-|Model|Input|
-|:---|:---|
-|Code interpreter|$0.03/session|
-|File Search|$0.10 / GB of vector-storage per day (1 GB free)|
+## Usage
 
-Fine-tuning models
 
-|Model|Training|Input|Output|
-|:---|:---|:---|:---|
-|gpt-3.5-turbo|$8.00|$3.00|$6.00|
-|davinci-002|$6.00|$12.00|$12.00|
-|babbage-002|$0.40|$1.60|$1.60|
-
-Embedding models
-
-|Model|Usage|
-|:---|:---|
-|text-embedding-3-small|$0.02|
-|text-embedding-3-large|$0.13|
-|ada v2|$0.10|
-
-Base models
-
-|Model|Usage|
-|:--|:---|
-|davinci-002|$2.00|
-|babbage-002|$0.40|
 
 ## Reference
 
@@ -56,3 +26,5 @@ Base models
 - [OpenAI python](https://github.com/openai/openai-python)
 - [OpenAI Cookbook](https://cookbook.openai.com/)
 - [생성 AI 활용기](https://wikidocs.net/195807)
+- [Zero-Shot and Few-Shot Learning with LLMs](https://neptune.ai/blog/zero-shot-and-few-shot-learning-with-llms)
+- 
