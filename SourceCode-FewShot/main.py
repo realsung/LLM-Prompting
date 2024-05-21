@@ -22,6 +22,18 @@ Todo
 - 클래스화
 '''
 
+try:
+    client = OpenAI(
+        api_key=settings.LLM_API_KEY['openai'],
+    )
+except:
+    print("OpenAI() failed")
+    
+try:
+    os.system("rm filelist.jsonl")
+except:
+    pass
+
 def extract_code(text):
     try:
         if '```' in text:
@@ -54,52 +66,25 @@ def diff_code(code1, code2):
     diff = difflib.unified_diff(code1, code2, lineterm='')
     return '\n'.join(diff)
 
-try:
-    client = OpenAI(
-        api_key=settings.LLM_API_KEY['openai'],
+def check_status(run_id,thread_id):
+    run = client.beta.threads.runs.retrieve(
+        thread_id=thread_id,
+        run_id=run_id,
     )
-except:
-    print("OpenAI() failed")
-    
-try:
-    os.system("rm filelist.jsonl")
-except:
-    pass
+    return run.status
 
 instruction = '''
-You are a highly skilled security analyst tasked with fixing a vulnerability in the following source code:
-
-Your task is to carefully review the code, identify the root cause of the vulnerability, and provide a detailed explanation of how to fix it. Please provide your analysis and proposed solution in the following format:
-
-1. Vulnerability Summary:
-   - Briefly describe the type of vulnerability and its potential impact.
-
-2. Root Cause Analysis:
-   - Explain the specific code patterns, design flaws, or coding practices that led to this vulnerability.
-   - Provide line numbers or code snippets to illustrate the problematic areas.
-
-3. Proposed Solution:
-   - Outline the steps or code changes required to remediate the vulnerability.
-   - If applicable, provide sample code snippets or pseudocode to demonstrate the secure implementation.
-
-4. Additional Considerations:
-   - Mention any potential side effects, trade-offs, or best practices to consider when implementing the proposed solution.
-   - Suggest any additional security measures or coding practices that could further strengthen the codebase.
-
-Please provide a thorough and actionable response, ensuring that your proposed solution effectively mitigates the identified vulnerability while adhering to secure coding principles and best practices.'''
-'''
-I'm working on a project to fix a vulnerability by entering the source code into LLM.
-The source code is annotated with information about the vulnerability.
-Please create a prompt for me to enter the LLM.
-'''
+You are a program development tool that takes in source code and fixes vulnerabilities.
+'''.strip()
 
 # create assistant
 # assistant = client.beta.assistants.create(
 #     name="Code Refactorer",
 #     instructions=instruction,
-#     tools=[{"type": "code_interpreter"}],
+#     tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
 #     model="gpt-4o",
 # )
+# id : asst_V3qdl7fwrsz1CI6iC3a1ZCuZ
 
 # .js filename list & write to .jsonl file
 # get ./example dir .js list glob
@@ -128,19 +113,75 @@ for file in file_list:
     # client.beta.assistants.files.create(assistant_id=assistant_id, file_id=uploaded_file.id)
 
 print(file_id_list)
+
+prompt_instruction = '''
+You are a highly skilled security analyst tasked with fixing a vulnerability in the following source code:
+
+Your task is to carefully review the code, identify the root cause of the vulnerability, and provide a detailed explanation of how to fix it. Please provide your analysis and proposed solution in the following format:
+
+1. Vulnerability Summary:
+   - Briefly describe the type of vulnerability and its potential impact.
+
+2. Root Cause Analysis:
+   - Explain the specific code patterns, design flaws, or coding practices that led to this vulnerability.
+   - Provide line numbers or code snippets to illustrate the problematic areas.
+
+3. Proposed Solution:
+   - Outline the steps or code changes required to remediate the vulnerability.
+   - If applicable, provide sample code snippets or pseudocode to demonstrate the secure implementation.
+
+4. Additional Considerations:
+   - Mention any potential side effects, trade-offs, or best practices to consider when implementing the proposed solution.
+   - Suggest any additional security measures or coding practices that could further strengthen the codebase.
+
+Please provide a thorough and actionable response, ensuring that your proposed solution effectively mitigates the identified vulnerability while adhering to secure coding principles and best practices.'''
+'''
+I'm working on a project to fix a vulnerability by entering the source code into LLM.
+The source code is annotated with information about the vulnerability.
+Please create a prompt for me to enter the LLM.
+'''
+
+thread  = client.beta.threads.create()
+
 # thread = client.beta.threads.create(
-    
-# )
-
-
-# assistant = client.beta.assistants.create(
-#     name="Data visualizer",
-#     description="You are great at creating beautiful data visualizations. You analyze data present in .csv files, understand trends, and come up with data visualizations relevant to those trends. You also share a brief text summary of the trends observed.",
-#     model="gpt-4o",
-#     tools=[{"type": "code_interpreter"}],
-#     tool_resources={
-#         "code_interpreter": {
-#             "file_ids": [file.id]
+#     messages=[
+#         {
+#             "role": "user",
+#             "content": "summarize this code",
+#             "attachments": [
+#                 {
+#                     "file_id": file_id_list[0],
+#                     "tools": [{"type": "code_interpreter"}]
+#                 }
+#             ]
 #         }
-#     }
+#     ]
 # )
+
+message = client.beta.threads.messages.create(
+    thread_id=thread.id,
+    role="user",
+    content="hi?",
+)
+
+
+my_run = client.beta.threads.runs.create(
+    thread_id=thread.id,
+    assistant_id=settings.LLM_API_KEY['assistant'],
+)
+
+start_time = time.time()
+status = check_status(my_run.id,thread.id)
+
+while status != 'completed':
+    time.sleep(1)
+    status = check_status(my_run.id,thread.id)
+
+print("Elapsed time: {} minutes {} seconds".format(int((time.time() - start_time) // 60), int((time.time() - start_time) % 60)))
+print(f'Status: {status}')
+
+messages = client.beta.threads.messages.list(
+    thread_id=thread.id
+)
+
+print(messages)
