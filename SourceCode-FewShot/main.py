@@ -3,6 +3,9 @@ from openai import OpenAI
 import time
 import json
 import glob
+import difflib
+import re
+from env import settings
 
 '''
 Todo
@@ -19,19 +22,46 @@ Todo
 - 클래스화
 '''
 
+def extract_code(text):
+    try:
+        if '```' in text:
+            matches = re.findall(r'`{3}(.*?)`{3}', text, re.DOTALL)
+            return matches
+
+        else:
+            return [text,]
+        
+    except Exception as exception:
+        return [text,]
+    
+    '''
+    function = None
+    match = re.search('```(.*?)```', code, re.DOTALL)
+    if match:
+        function = match.group(1)
+        function = function.replace("python","")
+
+    if function != None:
+        if len(Check_Syntax(function)) != 0:
+            return None
+        
+    return function
+    '''
+
+def diff_code(code1, code2):
+    code1 = code1.splitlines()
+    code2 = code2.splitlines()
+    diff = difflib.unified_diff(code1, code2, lineterm='')
+    return '\n'.join(diff)
+
 # Setting the API key
-OpenAI.api_key = os.environ['OPENAI_API_KEY']
+OpenAI.api_key = settings.LLM_API_KEY['openai']
 
 try:
     client = OpenAI()
 except:
     print("OpenAI() failed")
     
-# Get model list
-# print(client.models.list())
-# Our Target Model
-# Model(id='gpt-4o-2024-05-13', created=1715368132, object='model', owned_by='system')
-
 try:
     os.system("rm mydata.jsonl")
 except:
@@ -47,10 +77,20 @@ with open("mydata.jsonl", "r") as f:
     print(f.read())
 
 # Upload the codebase
-client.files.create(
-    file=open("mydata.jsonl", "rb"),
-    purpose="assistant"
-)
+file_list = []
+with open("mydata.jsonl", "r") as f:
+    for line in f:
+        file_list.append(json.loads(line))
+
+for file in file_list:
+    with open(file['path'], 'rb') as f:
+        uploaded_file = client.files.create(
+            file=f,
+            purpose='assistants'
+        )
+    # client.beta.assistants.files.create(assistant_id=assistant_id, file_id=uploaded_file.id)
+
+print(client.files.list())
 
 
 # assistant = client.beta.assistants.create(
