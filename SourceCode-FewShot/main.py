@@ -1,11 +1,11 @@
 import os
-from openai import OpenAI
 import time
 import json
 import glob
 import difflib
 import re
 from env import settings
+from openai import OpenAI
 
 '''
 Todo
@@ -54,43 +54,83 @@ def diff_code(code1, code2):
     diff = difflib.unified_diff(code1, code2, lineterm='')
     return '\n'.join(diff)
 
-# Setting the API key
-OpenAI.api_key = settings.LLM_API_KEY['openai']
-
 try:
-    client = OpenAI()
+    client = OpenAI(
+        api_key=settings.LLM_API_KEY['openai'],
+    )
 except:
     print("OpenAI() failed")
     
 try:
-    os.system("rm mydata.jsonl")
+    os.system("rm filelist.jsonl")
 except:
     pass
+
+instruction = '''
+You are a highly skilled security analyst tasked with fixing a vulnerability in the following source code:
+
+Your task is to carefully review the code, identify the root cause of the vulnerability, and provide a detailed explanation of how to fix it. Please provide your analysis and proposed solution in the following format:
+
+1. Vulnerability Summary:
+   - Briefly describe the type of vulnerability and its potential impact.
+
+2. Root Cause Analysis:
+   - Explain the specific code patterns, design flaws, or coding practices that led to this vulnerability.
+   - Provide line numbers or code snippets to illustrate the problematic areas.
+
+3. Proposed Solution:
+   - Outline the steps or code changes required to remediate the vulnerability.
+   - If applicable, provide sample code snippets or pseudocode to demonstrate the secure implementation.
+
+4. Additional Considerations:
+   - Mention any potential side effects, trade-offs, or best practices to consider when implementing the proposed solution.
+   - Suggest any additional security measures or coding practices that could further strengthen the codebase.
+
+Please provide a thorough and actionable response, ensuring that your proposed solution effectively mitigates the identified vulnerability while adhering to secure coding principles and best practices.'''
+'''
+I'm working on a project to fix a vulnerability by entering the source code into LLM.
+The source code is annotated with information about the vulnerability.
+Please create a prompt for me to enter the LLM.
+'''
+
+# create assistant
+# assistant = client.beta.assistants.create(
+#     name="Code Refactorer",
+#     instructions=instruction,
+#     tools=[{"type": "code_interpreter"}],
+#     model="gpt-4o",
+# )
 
 # .js filename list & write to .jsonl file
 # get ./example dir .js list glob
 for path in glob.iglob('example/**/*.js', recursive=True):
-    with open("mydata.jsonl", "a+") as f:
+    with open("filelist.jsonl", "a+") as f:
         f.write(json.dumps({"filename": os.path.basename(path), "path":path}) + "\n")
 
-with open("mydata.jsonl", "r") as f:
+with open("filelist.jsonl", "r") as f:
     print(f.read())
 
 # Upload the codebase
 file_list = []
-with open("mydata.jsonl", "r") as f:
+file_id_list = []
+
+with open("filelist.jsonl", "r") as f:
     for line in f:
         file_list.append(json.loads(line))
 
 for file in file_list:
-    with open(file['path'], 'rb') as f:
-        uploaded_file = client.files.create(
-            file=f,
-            purpose='assistants'
-        )
+    file_id = client.files.create(
+        file=open(file['path'], "rb"),
+        purpose="user_data",
+    )
+    file_id_list.append(file_id.id)
+
     # client.beta.assistants.files.create(assistant_id=assistant_id, file_id=uploaded_file.id)
 
-print(client.files.list())
+print(file_id_list)
+# thread = client.beta.threads.create(
+    
+# )
 
 
 # assistant = client.beta.assistants.create(
